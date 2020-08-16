@@ -4,6 +4,9 @@
 _JMT_CURRENT_BG='NONE'
 _JMT_CURRENT_RBG='NONE'
 _JMT_SEGMENT_SEPARATOR='▒'
+_JMT_GIT_CHANGE_CHARACTER='✶'
+_JMT_GIT_STAGED_CHARACTER='+'
+_JMT_GIT_FRESH_CHARACTER='○'
 
 function _jmt_text_effect {
   case "$1" in
@@ -121,8 +124,18 @@ function _jmt_prompt_dir {
 }
 
 function _jmt_git_status_dirty {
-    dirty=$(git status -s 2> /dev/null | tail -n 1)
-    [[ -n $dirty ]] && echo " ✶"
+  changes=''
+  staged=''
+
+  git diff --no-ext-diff --quiet --exit-code || changes="$_JMT_GIT_CHANGE_CHARACTER"
+  if [ -n "$(git rev-parse --short HEAD 2>/dev/null)" ]; then
+    git diff-index --cached --quiet HEAD -- || staged="$_JMT_GIT_STAGED_CHARACTER"
+  else
+    staged="$_JMT_GIT_FRESH_CHARACTER"
+  fi
+
+  dirty="$changes$staged"
+  [[ -n $dirty ]] && echo " $dirty"
 }
 
 function _jmt_prompt_git {
@@ -139,7 +152,6 @@ function _jmt_prompt_git {
     PR="$PR${ref/refs\/heads\// }$dirty"
   fi
 }
-
 
 function _jmt_prompt_bashprompt {
   PR="$PR $_JMT_SEGMENT_SEPARATOR$(_jmt_ansi_colourline)\n"
