@@ -84,7 +84,7 @@ function _jmt_ctrl {
 
 function _jmt_section {
   _jmt_ctrl bg $2 fg $1
-  _jmt_acc "${3}${_JMT_SEC_END_CHARACTER}"
+  _jmt_acc "${_JMT_SEC_BEGIN_CHARACTER}${3}${_JMT_SEC_END_CHARACTER}"
 }
 
 function _jmt_prompt_status {
