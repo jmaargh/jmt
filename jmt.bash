@@ -12,67 +12,79 @@ function _jmt_acc {
   _JMT_ACC="${_JMT_ACC}${1}"
 }
 
-function _jmt_ansi {
-  _jmt_acc "\033[${1}m"
-}
-
-function _jmt_text_effect {
+function _jmt_effect {
   local code=0
   case "$1" in
-    reset)      code='0';;
-    bold)       code='1';;
-    underline)  code='4';;
+    reset)      code='\033[0m';;
+    bold)       code='\033[1m';;
+    underline)  code='\033[4m';;
   esac
-  _jmt_ansi "$code"
+  _jmt_acc "$code"
 }
 
-function _jmt_fg_colour {
+function _jmt_fg {
   local code=0
   case "$1" in
-    black)      code='30';;
-    red)        code='31';;
-    green)      code='32';;
-    yellow)     code='33';;
-    blue)       code='34';;
-    magenta)    code='35';;
-    cyan)       code='36';;
-    white)      code='37';;
-    orange)     code='38\;5\;166';;
+    black)      code='\033[30m';;
+    red)        code='\033[31m';;
+    green)      code='\033[32m';;
+    yellow)     code='\033[33m';;
+    blue)       code='\033[34m';;
+    magenta)    code='\033[35m';;
+    cyan)       code='\033[36m';;
+    white)      code='\033[37m';;
+    orange)     code='\033[38\;5\;166m';;
   esac
-  _jmt_ansi "$code"
+  _jmt_acc "$code"
 }
 
-function _jmt_bg_colour {
+function _jmt_bg {
   local code=0
   case "$1" in
-    default)    code='49';;
-    black)      code='40';;
-    red)        code='41';;
-    green)      code='42';;
-    yellow)     code='43';;
-    blue)       code='44';;
-    magenta)    code='45';;
-    cyan)       code='46';;
-    white)      code='47';;
-    orange)     code='48\;5\;166';;
+    default)    code='\033[49m';;
+    black)      code='\033[40m';;
+    red)        code='\033[41m';;
+    green)      code='\033[42m';;
+    yellow)     code='\033[43m';;
+    blue)       code='\033[44m';;
+    magenta)    code='\033[45m';;
+    cyan)       code='\033[46m';;
+    white)      code='\033[47m';;
+    orange)     code='\033[48\;5\;166m';;
   esac
-  _jmt_ansi "$code"
+  _jmt_acc "$code"
 }
 
-function _jmt_colourline {
-  _jmt_bg_colour $1
-  _jmt_acc "\033[K"
+function _jmt_ctrl {
+  _jmt_acc "\["
+  while (( "$#" )); do
+    case "$1" in
+      fg)
+        _jmt_fg $2
+        shift
+        ;;
+      bg)
+        _jmt_bg $2
+        shift
+        ;;
+      effect)
+        _jmt_effect $2
+        shift
+        ;;
+      line)
+        _jmt_bg $2
+        _jmt_acc "\033[K"
+        shift
+        ;;
+    esac
+    shift
+  done
+  _jmt_acc "\]"
 }
 
 function _jmt_section {
-  local fg=$1
-  local bg=$2
-  local content=$3
-
-  _jmt_bg_colour "$bg"
-  _jmt_fg_colour "$fg"
-
-  _jmt_acc "${_JMT_SEC_BEGIN_CHARACTER}${content}${_JMT_SEC_END_CHARACTER}"
+  _jmt_ctrl bg $2 fg $1
+  _jmt_acc "${3}${_JMT_SEC_END_CHARACTER}"
 }
 
 function _jmt_prompt_status {
@@ -81,19 +93,19 @@ function _jmt_prompt_status {
 
   _JMT_ACC=""
   if [[ $_JMT_RETVAL -ne 0 ]]; then
-    _jmt_fg_colour red
+    _jmt_ctrl fg red
     _jmt_acc "✘"
   fi
   if [[ $UID -eq 0 ]]; then
-    _jmt_fg_colour yellow
+    _jmt_ctrl fg yellow
     _jmt_acc "⚡"
   fi
   if [[ $(jobs -l | wc -l) -gt 0 ]]; then
-    _jmt_fg_colour cyan
+    jmt_ctrl fg cyan
     _jmt_acc "⚙"
   fi
   if [[ -n "$SSH_CLIENT" ]] || [[ -n "$SSH_TTY" ]]; then
-    _jmt_fg_colour orange
+    _jmt_ctrl fg orange
     _jmt_acc "🔗"
   fi
   local_acc="${_JMT_ACC}"
@@ -143,10 +155,10 @@ function _jmt_prompt_git {
   fi
 }
 
+
+
 function _jmt_prompt_bashprompt {
-  _jmt_colourline blue
-  _jmt_fg_colour white
-  _jmt_bg_colour blue
+  _jmt_ctrl line blue fg white bg blue
   _jmt_acc "\n $"
 }
 
@@ -162,13 +174,11 @@ function _jmt_bash_prompt {
   _JMT_RETVAL=$?
   _JMT_ACC=""
 
-  _jmt_text_effect reset
-  _jmt_bg_colour default
+  _jmt_ctrl effect reset bg default
   
   _jmt_build_prompt
 
-  _jmt_text_effect reset
-  _jmt_colourline default
+  _jmt_ctrl effect reset line default
   _jmt_acc "${_JMT_END_CHARACTER}"
 
   PS1=${_JMT_ACC}
