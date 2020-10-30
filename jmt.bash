@@ -114,12 +114,12 @@ function _jmt_prompt_flags {
   fi
   if [[ $UID -eq 0 ]]; then
     _jmt_ctrl fg yellow effect bold
-    _jmt_acc "$"
+    _jmt_acc "§"
     _jmt_ctrl effect reset
   fi
   if [[ $(jobs -l | wc -l) -gt 0 ]]; then
     _jmt_ctrl fg cyan
-    _jmt_acc '#'
+    _jmt_acc '¤'
   fi
   local_acc="${_JMT_ACC}"
   _JMT_ACC="${acc_backup}"
@@ -158,13 +158,13 @@ function _jmt_prompt_git {
   local ref dirty background
   if $(git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
     dirty=$(_jmt_git_status_dirty)
-    ref=$(git symbolic-ref HEAD 2> /dev/null) || ref="➦ $(git show-ref --head -s --abbrev |head -n1 2> /dev/null)"
+    ref=$(git symbolic-ref HEAD 2> /dev/null) || ref="┑ $(git show-ref --head -s --abbrev |head -n1 2> /dev/null)"
     if [[ -n $dirty ]]; then
       background="yellow"
     else
       background="green"
     fi
-    _jmt_section black $background "${ref/refs\/heads\// }$dirty"
+    _jmt_section black $background "${ref/refs\/heads\//┝ }$dirty"
   fi
 }
 
