@@ -95,18 +95,19 @@ function _jmt_prompt_dir {
 }
 
 function _jmt_git_status_dirty {
-  changes=''
-  staged=''
-  new=''
+  local dirty=''
+  local changes=''
+  local staged=''
+  local new=''
 
-  git diff --no-ext-diff --quiet --exit-code || changes="*"
+  git diff --no-ext-diff --quiet --exit-code || dirty+="*"
   if [ -n "$(git rev-parse --short HEAD 2>/dev/null)" ]; then
-    git diff-index --cached --quiet HEAD -- || staged="+"
+    git diff-index --cached --quiet HEAD -- || dirty+="+"
   else
-    new="o"
+    dirty+="o"
   fi
 
-  echo "$changes$staged$new"
+  [[ -n $dirty ]] && echo " $dirty"
 }
 
 function _jmt_prompt_git {
