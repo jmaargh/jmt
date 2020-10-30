@@ -1,5 +1,4 @@
-# Derived from https://github.com/ohmybash/oh-my-bash/blob/master/themes/agnoster/agnoster.theme.sh
-# (which is MIT licenced)
+# Colours: https://coolors.co/212121-272244-3c376d-a9b3ce-f4d35e-dbdbdb
 
 _JMT_SEC_BEGIN_CHARACTER=' '
 _JMT_SEC_END_CHARACTER=' '
@@ -175,7 +174,7 @@ function _jmt_prompt_bashprompt {
   if [[ $UID -eq 0 ]]; then
     _jmt_ctrl fg yellow
   fi
-  _jmt_acc "\n \$"
+  _jmt_acc "\n \\$"
 }
 
 function _jmt_build_prompt {
