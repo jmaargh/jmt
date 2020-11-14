@@ -136,11 +136,18 @@ function _jmt_prompt_bashprompt {
   echo -e "$(_jmt_ctrl line blue)\n$(_jmt_ctrl ${prompt_colour}) \\$"
 }
 
+function _jmt_prompt_title {
+  if [[ $TERM == xterm* ]]; then
+    echo -e "\[\033]0;\u@\h:\w\007\]"
+  fi
+}
+
 function _jmt_bash_prompt {
   _JMT_RETVAL=$?
 
   PS1="\
 $(_jmt_prompt_prelude)\
+$(_jmt_prompt_title)\
 $(_jmt_prompt_flags)\
 $(_jmt_prompt_host)\
 $(_jmt_prompt_dir)\
