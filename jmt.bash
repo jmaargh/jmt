@@ -2,33 +2,33 @@
 
 function _jmt_effect {
   case "$1" in
-    reset)      echo '\033[0m';;
-    bold)       echo '\033[1m';;
+    reset)      echo -e '\033[0m';;
+    bold)       echo -e '\033[1m';;
   esac
 }
 
 function _jmt_fg {
   case "$1" in
-    black)      echo '\033[38;2;33;33;33m';;
-    red)        echo '\033[31m';;
-    yellow)     echo '\033[38;2;244;211;94m';;
-    cyan)       echo '\033[36m';;
-    white)      echo '\033[38;2;219;219;219m';;
-    orange)     echo '\033[38;5;166m';;
+    black)      echo -e '\033[38;2;33;33;33m';;
+    red)        echo -e '\033[31m';;
+    yellow)     echo -e '\033[38;2;244;211;94m';;
+    cyan)       echo -e '\033[36m';;
+    white)      echo -e '\033[38;2;219;219;219m';;
+    orange)     echo -e '\033[38;5;166m';;
   esac
 }
 
 function _jmt_bg {
   case "$1" in
-    default)    echo '\033[49m';;
-    black)      echo '\033[40m';;
-    green)      echo '\033[48;2;128;178;108m';;
-    yellow)     echo '\033[48;2;244;211;94m';;
-    blue)       echo '\033[48;2;60;55;109m';;
-    pale)       echo '\033[48;2;169;179;206m';;
-    dark)       echo '\033[48;2;39;34;68m';;
-    cyan)       echo '\033[46m';;
-    orange)     echo '\033[48;5;166m';;
+    default)    echo -e '\033[49m';;
+    black)      echo -e '\033[40m';;
+    green)      echo -e '\033[48;2;128;178;108m';;
+    yellow)     echo -e '\033[48;2;244;211;94m';;
+    blue)       echo -e '\033[48;2;60;55;109m';;
+    pale)       echo -e '\033[48;2;169;179;206m';;
+    dark)       echo -e '\033[48;2;39;34;68m';;
+    cyan)       echo -e '\033[46m';;
+    orange)     echo -e '\033[48;5;166m';;
   esac
 }
 
@@ -55,16 +55,20 @@ function _jmt_ctrl {
     esac
     shift
   done
-  echo "\[${local_acc}\]"
+  echo -e "\001${local_acc}\002"
 }
 
 function _jmt_section {
-  echo "$(_jmt_ctrl effect $3 bg $2 fg $1) ${4} "
+  echo -e "$(_jmt_ctrl effect $3 bg $2 fg $1) ${4} "
 }
 
-function _jmt_prompt_prev {
+function _jmt_prompt_prelude {
+  # Any scrolling with colourlines is buggy, so we work around it by first writing
+  # blank lines for each line we'll draw, then jumping back up that many lines
   if [[ $_JMT_RETVAL -ne 0 ]]; then
-    echo "$(_jmt_ctrl line dark fg red) x$(_jmt_ctrl fg white) $_JMT_RETVAL\n$(_jmt_ctrl line default)"
+    echo -e "$(_jmt_ctrl effect reset)\n\n\[\033[2A\]$(_jmt_ctrl line dark fg red) x$(_jmt_ctrl fg white) $_JMT_RETVAL\n$(_jmt_ctrl line default)"
+  else
+    echo -e "$(_jmt_ctrl effect reset)\n\[\033[1A\]"
   fi
 }
 
@@ -107,7 +111,7 @@ function _jmt_git_status_dirty {
     dirty+="o"
   fi
 
-  [[ -n $dirty ]] && echo " $dirty"
+  [[ -n $dirty ]] && echo -e " $dirty"
 }
 
 function _jmt_prompt_git {
@@ -129,21 +133,20 @@ function _jmt_prompt_bashprompt {
   if [[ $UID -eq 0 ]]; then
     prompt_colour="fg yellow"
   fi
-  echo "$(_jmt_ctrl line blue bg blue ${prompt_colour})\n \\$"
+  echo -e "$(_jmt_ctrl line blue)\n$(_jmt_ctrl ${prompt_colour}) \\$"
 }
 
 function _jmt_bash_prompt {
   _JMT_RETVAL=$?
 
   PS1="\
-$(_jmt_ctrl effect reset bg default)\
-$(_jmt_prompt_prev)\
+$(_jmt_prompt_prelude)\
 $(_jmt_prompt_flags)\
 $(_jmt_prompt_host)\
 $(_jmt_prompt_dir)\
 $(_jmt_prompt_git)\
 $(_jmt_prompt_bashprompt)\
-$(_jmt_ctrl effect reset line default) \
+$(_jmt_ctrl effect reset) \
 "
 }
 
