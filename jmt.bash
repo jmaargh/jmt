@@ -29,6 +29,7 @@ function _jmt_bg {
     dark)       echo -e '\033[48;2;39;34;68m';;
     cyan)       echo -e '\033[46m';;
     orange)     echo -e '\033[48;5;166m';;
+    red)        echo -e '\033[48;2;165;64;39m';;
   esac
 }
 
@@ -114,6 +115,25 @@ function _jmt_git_status_dirty {
   [[ -n $dirty ]] && echo -e " $dirty"
 }
 
+function _jmt_current_column {
+  local oldstty
+  local position
+  exec < /dev/tty
+  oldstty=$(stty -g)
+  stty raw -echo min 0
+  echo -en "\033[6n" > /dev/tty
+  IFS=';' read -r -d R -a position
+  stty $oldstty
+  # 0-based indexing
+  echo $((${position[1]} - 1))
+}
+
+function _jmt_short_line_bang {
+  if (( _JMT_START_COLUMN > 0 )); then
+    echo "$(_jmt_ctrl bg red fg black)¬\n"
+  fi
+}
+
 function _jmt_prompt_git {
   local ref dirty background
   if $(git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
@@ -144,8 +164,10 @@ function _jmt_prompt_title {
 
 function _jmt_bash_prompt {
   _JMT_RETVAL=$?
+  _JMT_START_COLUMN=$(_jmt_current_column)
 
   PS1="\
+$(_jmt_short_line_bang)\
 $(_jmt_prompt_prelude)\
 $(_jmt_prompt_title)\
 $(_jmt_prompt_flags)\
