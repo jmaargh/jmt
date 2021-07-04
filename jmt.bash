@@ -49,14 +49,10 @@ function _jmt_ctrl {
         local_acc+=$(_jmt_effect $2)
         shift
         ;;
-      line)
-        local_acc+="$(_jmt_bg $2)\033[K"
-        shift
-        ;;
     esac
     shift
   done
-  echo -e "\001${local_acc}\002"
+  echo -e "\[${local_acc}\]"
 }
 
 function _jmt_section {
@@ -64,12 +60,13 @@ function _jmt_section {
 }
 
 function _jmt_prompt_prelude {
-  # Any scrolling with colourlines is buggy, so we work around it by first writing
-  # blank lines for each line we'll draw, then jumping back up that many lines
   if [[ $_JMT_RETVAL -ne 0 ]]; then
-    echo -e "$(_jmt_ctrl effect reset)\n\n\[\033[2A\]$(_jmt_ctrl line dark fg red) x$(_jmt_ctrl fg white) $_JMT_RETVAL\n$(_jmt_ctrl line default)"
-  else
-    echo -e "$(_jmt_ctrl effect reset)\n\[\033[1A\]"
+    # It's necessary to pad ignoring colour control characters, so we need to
+    # pre-calculate how many of those we have
+    local x_format="$(_jmt_ctrl bg dark fg red)"
+    local num_format="$(_jmt_ctrl fg white)"
+    local padding=$(($COLUMNS + ${#x_format} + ${#num_format}))
+    printf "%-${padding}s\n" "$x_format x$num_format $_JMT_RETVAL"
   fi
 }
 
@@ -130,7 +127,7 @@ function _jmt_current_column {
 
 function _jmt_short_line_bang {
   if (( _JMT_START_COLUMN > 0 )); then
-    echo "$(_jmt_ctrl bg red fg black)¬\n"
+    echo "$(_jmt_ctrl bg red fg black)¬$(_jmt_ctrl bg default)\n"
   fi
 }
 
@@ -148,12 +145,18 @@ function _jmt_prompt_git {
   fi
 }
 
+function _jmt_prompt_time {
+  local format_string="$(_jmt_ctrl bg blue fg white)"
+  local padding=$(( $COLUMNS - $1 + ${#format_string} ))
+  printf "$(_jmt_ctrl bg dark)%${padding}s" "${format_string} $(date +%H:%M:%S) "
+}
+
 function _jmt_prompt_bashprompt {
   local prompt_colour="fg white"
   if [[ $UID -eq 0 ]]; then
     prompt_colour="fg yellow"
   fi
-  echo -e "$(_jmt_ctrl line blue)\n$(_jmt_ctrl ${prompt_colour}) \\$"
+  echo -e "$(_jmt_ctrl bg default)\n$(_jmt_ctrl bg blue)$(_jmt_ctrl ${prompt_colour}) \\$"
 }
 
 function _jmt_prompt_title {
@@ -166,17 +169,39 @@ function _jmt_bash_prompt {
   _JMT_RETVAL=$?
   _JMT_START_COLUMN=$(_jmt_current_column)
 
-  PS1="\
+  local prelude="\
 $(_jmt_short_line_bang)\
 $(_jmt_prompt_prelude)\
 $(_jmt_prompt_title)\
+"
+
+  local mainline="\
 $(_jmt_prompt_flags)\
 $(_jmt_prompt_host)\
 $(_jmt_prompt_dir)\
 $(_jmt_prompt_git)\
-$(_jmt_prompt_bashprompt)\
-$(_jmt_ctrl effect reset) \
 "
+
+  # This is supposed to calculate the current printed length of the line so far,
+  # but seems to undercount by 2 * number of sections, not sure why. Probably
+  # something to do with the horrible glob I got from SO.
+  local mainline_rendered="${mainline@P}"
+  local old_shopt=$(shopt -p extglob) # Save extglob option status
+  local old_ifs="$IFS"
+  shopt -s extglob
+  local IFS=
+  local mainline_printable="${mainline_rendered//$'\e'[\[(]*([0-9;])[@-n]/}"
+  local IFS=$old_ifs
+  ${old_shopt} # Restore extglob option status
+
+  local right="$(_jmt_prompt_time ${#mainline_printable})"
+
+  local prompt="\
+$(_jmt_prompt_bashprompt)\
+$(_jmt_ctrl effect reset bg default) \
+"
+
+  PS1="${prelude}${mainline}${right}${prompt}"
 }
 
 PROMPT_COMMAND=_jmt_bash_prompt
