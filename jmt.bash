@@ -85,7 +85,7 @@ function _jmt_prompt_flags {
     acc_nc+="#"
   fi
   if [[ -n "$(jobs -l)" ]]; then
-    acc+="$(_jmt_ctrl fg cyan)o"
+    acc+="$(_jmt_ctrl fg cyan)▣"
     acc_nc+="▣"
   fi
 
