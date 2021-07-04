@@ -149,11 +149,16 @@ function _jmt_prompt_git {
 }
 
 function _jmt_prompt_time {
-  local content=" \t "
-  # Reset must come first
-  local content_format="$(_jmt_ctrl effect reset bg blue fg white)"
-  local padding=$(( $COLUMNS - $1 - 6 + ${#content_format} ))  # 6 because $content expands from " \t " to " HH:MM:SS "
-  _JMT_PS1+="$(_jmt_ctrl bg dark)$(printf "%${padding}s" "$content_format$content")"
+  let "available_columns = $COLUMNS - $1"
+  if $JMT_FORCETIME || (( $available_columns >= 10 )); then
+    local content=" \t "
+    # Reset must come first
+    local content_format="$(_jmt_ctrl effect reset bg blue fg white)"
+    let "padding = $available_columns - 6 + ${#content_format}"  # 6 because $content expands from " \t " to " HH:MM:SS "
+    _JMT_PS1+="$(_jmt_ctrl bg dark)$(printf "%${padding}s" "$content_format$content")"
+  else
+    _JMT_PS1+="$(_jmt_ctrl bg dark)$(printf "%*s" $available_columns "")"
+  fi
 }
 
 function _jmt_prompt_bashprompt {
@@ -178,6 +183,7 @@ function _jmt_prompt_reset {
 function _jmt_bash_prompt {
   # Only show three levels of dirs by default
   : ${PROMPT_DIRTRIM:=3}
+  : ${JMT_FORCETIME:=false}
 
   _JMT_RETVAL=$?
   _JMT_START_COLUMN=$(_jmt_current_column)
