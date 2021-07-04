@@ -120,17 +120,13 @@ function _jmt_git_status_dirty {
 }
 
 function _jmt_current_column {
-  local oldstty
-  local position
-  exec < /dev/tty
-  oldstty=$(stty -g)
-  stty raw -echo min 0
-  echo -en "\033[6n" > /dev/tty
-  IFS=';' read -r -d R -a position
-  stty $oldstty
-  # 0-based indexing
-  echo $((${position[1]} - 1))
+  # https://unix.stackexchange.com/a/183121/290035
+  local row
+  local col
+  IFS=';' read -sdR -p $'\E[6n' row col
+  echo $(($col - 1))  # 0-based indexing
 }
+
 
 function _jmt_short_line_bang {
   if (( _JMT_START_COLUMN > 0 )); then
