@@ -161,7 +161,7 @@ function _jmt_prompt_bashprompt {
   if [[ $UID -eq 0 ]]; then
     foreground="yellow"
   fi
-  _JMT_PS1+="$(_jmt_ctrl effect reset)\n$(_jmt_ctrl effect reset fg $foreground bg blue) $"
+  _JMT_PS1+="$(_jmt_ctrl effect reset)\n$(_jmt_ctrl effect reset fg $foreground bg blue) \\$"
 }
 
 function _jmt_prompt_title {
