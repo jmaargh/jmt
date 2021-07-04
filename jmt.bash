@@ -150,7 +150,7 @@ function _jmt_prompt_git {
 
 function _jmt_prompt_time {
   let "available_columns = $COLUMNS - $1"
-  if $JMT_FORCETIME || (( $available_columns >= 10 )); then
+  if $JMT_FORCETIME || (( $available_columns >= 10 )) || (( $available_columns < 0 )); then
     local content=" \t "
     # Reset must come first
     local content_format="$(_jmt_ctrl effect reset bg blue fg white)"
