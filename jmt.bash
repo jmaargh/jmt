@@ -149,10 +149,10 @@ function _jmt_prompt_git {
 }
 
 function _jmt_prompt_time {
-  local content=" $(date +%H:%M:%S) "
+  local content=" \t "
   # Reset must come first
   local content_format="$(_jmt_ctrl effect reset bg blue fg white)"
-  local padding=$(( $COLUMNS - $1 + ${#content_format} ))
+  local padding=$(( $COLUMNS - $1 - 6 + ${#content_format} ))  # 6 because $content expands from " \t " to " HH:MM:SS "
   _JMT_PS1+="$(_jmt_ctrl bg dark)$(printf "%${padding}s" "$content_format$content")"
 }
 
