@@ -2,34 +2,34 @@
 
 function _jmt_effect {
   case "$1" in
-    reset)      echo -e '\033[0m';;
-    bold)       echo -e '\033[1m';;
+    reset)      echo -e '\e[0m';;
+    bold)       echo -e '\e[1m';;
   esac
 }
 
 function _jmt_fg {
   case "$1" in
-    black)      echo -e '\033[38;2;33;33;33m';;
-    red)        echo -e '\033[31m';;
-    yellow)     echo -e '\033[38;2;244;211;94m';;
-    cyan)       echo -e '\033[36m';;
-    white)      echo -e '\033[38;2;219;219;219m';;
-    orange)     echo -e '\033[38;5;166m';;
+    black)      echo -e '\e[38;2;33;33;33m';;
+    red)        echo -e '\e[31m';;
+    yellow)     echo -e '\e[38;2;244;211;94m';;
+    cyan)       echo -e '\e[36m';;
+    white)      echo -e '\e[38;2;219;219;219m';;
+    orange)     echo -e '\e[38;5;166m';;
   esac
 }
 
 function _jmt_bg {
   case "$1" in
-    default)    echo -e '\033[49m';;
-    black)      echo -e '\033[40m';;
-    green)      echo -e '\033[48;2;128;178;108m';;
-    yellow)     echo -e '\033[48;2;244;211;94m';;
-    blue)       echo -e '\033[48;2;60;55;109m';;
-    pale)       echo -e '\033[48;2;169;179;206m';;
-    dark)       echo -e '\033[48;2;39;34;68m';;
-    cyan)       echo -e '\033[46m';;
-    orange)     echo -e '\033[48;5;166m';;
-    red)        echo -e '\033[48;2;165;64;39m';;
+    default)    echo -e '\e[49m';;
+    black)      echo -e '\e[40m';;
+    green)      echo -e '\e[48;2;128;178;108m';;
+    yellow)     echo -e '\e[48;2;244;211;94m';;
+    blue)       echo -e '\e[48;2;60;55;109m';;
+    pale)       echo -e '\e[48;2;169;179;206m';;
+    dark)       echo -e '\e[48;2;39;34;68m';;
+    cyan)       echo -e '\e[46m';;
+    orange)     echo -e '\e[48;5;166m';;
+    red)        echo -e '\e[48;2;165;64;39m';;
   esac
 }
 
@@ -56,35 +56,42 @@ function _jmt_ctrl {
 }
 
 function _jmt_section {
-  echo -e "$(_jmt_ctrl effect $3 bg $2 fg $1) ${4} "
+  local content=" $4 "
+  _JMT_PS1_NC+="$content"
+  # effect comes first because if it's reset it would override the colours
+  _JMT_PS1+="$(_jmt_ctrl effect $3 bg $2 fg $1)$content"
 }
 
 function _jmt_prompt_prelude {
   if [[ $_JMT_RETVAL -ne 0 ]]; then
     # It's necessary to pad ignoring colour control characters, so we need to
     # pre-calculate how many of those we have
-    local x_format="$(_jmt_ctrl bg dark fg red)"
-    local num_format="$(_jmt_ctrl fg white)"
-    local padding=$(($COLUMNS + ${#x_format} + ${#num_format}))
-    printf "%-${padding}s\n" "$x_format x$num_format $_JMT_RETVAL"
+    _jmt_section red dark bold "x"
+    local padding=$(($COLUMNS - 3))  # 3 chars for the x and two spaces
+    _JMT_PS1+="$(_jmt_ctrl effect reset fg white bg dark)$(printf "%-${padding}s\n" "$_JMT_RETVAL" )"
   fi
 }
 
 function _jmt_prompt_flags {
-  local local_acc=""
+  local acc=""
+  local acc_nc=""
 
   if [[ -n "$SSH_CLIENT" ]] || [[ -n "$SSH_TTY" ]]; then
-    local_acc+="$(_jmt_ctrl fg orange)@"
+    acc+="$(_jmt_ctrl fg orange)@"
+    acc_nc+="@"
   fi
   if [[ $UID -eq 0 ]]; then
-    local_acc+="$(_jmt_ctrl fg yellow)#"
+    acc+="$(_jmt_ctrl fg yellow)#"
+    acc_nc+="#"
   fi
-  if [[ $(jobs -l | wc -l) -gt 0 ]]; then
-    local_acc+="$(_jmt_ctrl fg cyan)▣"
+  if [[ -n "$(jobs -l)" ]]; then
+    acc+="$(_jmt_ctrl fg cyan)o"
+    acc_nc+="▣"
   fi
 
-  if [[ -n "${local_acc}" ]]; then
-    _jmt_section black dark bold "${local_acc}"
+  if [[ -n "${acc_nc}" ]]; then
+    _JMT_PS1+="$(_jmt_ctrl effect bold bg dark) $acc "
+    _JMT_PS1_NC+=" $acc_nc "
   fi
 }
 
@@ -127,7 +134,7 @@ function _jmt_current_column {
 
 function _jmt_short_line_bang {
   if (( _JMT_START_COLUMN > 0 )); then
-    echo "$(_jmt_ctrl bg red fg black)¬$(_jmt_ctrl bg default)\n"
+    _JMT_PS1+="$(_jmt_ctrl bg red fg black)¬$(_jmt_ctrl effect reset)\n"
   fi
 }
 
@@ -146,62 +153,57 @@ function _jmt_prompt_git {
 }
 
 function _jmt_prompt_time {
-  local format_string="$(_jmt_ctrl bg blue fg white)"
-  local padding=$(( $COLUMNS - $1 + ${#format_string} ))
-  printf "$(_jmt_ctrl bg dark)%${padding}s" "${format_string} $(date +%H:%M:%S) "
+  local content=" $(date +%H:%M:%S) "
+  # Reset must come first
+  local content_format="$(_jmt_ctrl effect reset bg blue fg white)"
+  local padding=$(( $COLUMNS - $1 + ${#content_format} ))
+  _JMT_PS1+="$(_jmt_ctrl bg dark)$(printf "%${padding}s" "$content_format$content")"
 }
 
 function _jmt_prompt_bashprompt {
-  local prompt_colour="fg white"
+  local foreground="white"
   if [[ $UID -eq 0 ]]; then
-    prompt_colour="fg yellow"
+    foreground="yellow"
   fi
-  echo -e "$(_jmt_ctrl bg default)\n$(_jmt_ctrl bg blue)$(_jmt_ctrl ${prompt_colour}) \\$"
+  _JMT_PS1+="$(_jmt_ctrl effect reset)\n$(_jmt_ctrl effect reset fg $foreground bg blue) $"
 }
 
 function _jmt_prompt_title {
   if [[ $TERM == xterm* ]]; then
-    echo -e "\[\033]0;\u@\h:\w\007\]"
+    _JMT_PS1+="\[\033]0;\u@\h:\w\007\]"
   fi
+}
+
+function _jmt_prompt_reset {
+  # the reset code should reset fg, bg, and effects
+  _JMT_PS1+="$(_jmt_ctrl effect reset)"
 }
 
 function _jmt_bash_prompt {
   _JMT_RETVAL=$?
   _JMT_START_COLUMN=$(_jmt_current_column)
 
-  local prelude="\
-$(_jmt_short_line_bang)\
-$(_jmt_prompt_prelude)\
-$(_jmt_prompt_title)\
-"
+  _JMT_PS1=""
+  _JMT_PS1_NC=""  # No control characters
 
-  local mainline="\
-$(_jmt_prompt_flags)\
-$(_jmt_prompt_host)\
-$(_jmt_prompt_dir)\
-$(_jmt_prompt_git)\
-"
+  _jmt_short_line_bang
+  _jmt_prompt_prelude
+  _jmt_prompt_title
 
-  # This is supposed to calculate the current printed length of the line so far,
-  # but seems to undercount by 2 * number of sections, not sure why. Probably
-  # something to do with the horrible glob I got from SO.
-  local mainline_rendered="${mainline@P}"
-  local old_shopt=$(shopt -p extglob) # Save extglob option status
-  local old_ifs="$IFS"
-  shopt -s extglob
-  local IFS=
-  local mainline_printable="${mainline_rendered//$'\e'[\[(]*([0-9;])[@-n]/}"
-  local IFS=$old_ifs
-  ${old_shopt} # Restore extglob option status
+  _JMT_PS1_NC=""
+  _jmt_prompt_flags
+  _jmt_prompt_host
+  _jmt_prompt_dir
+  _jmt_prompt_git
 
-  local right="$(_jmt_prompt_time ${#mainline_printable})"
+  local mainline_rendered="${_JMT_PS1_NC@P}"
 
-  local prompt="\
-$(_jmt_prompt_bashprompt)\
-$(_jmt_ctrl effect reset bg default) \
-"
+  _jmt_prompt_time ${#mainline_rendered}
+  _jmt_prompt_bashprompt
+  _jmt_prompt_reset
 
-  PS1="${prelude}${mainline}${right}${prompt}"
+  # Add the final space here
+  PS1="$_JMT_PS1 "
 }
 
 PROMPT_COMMAND=_jmt_bash_prompt
