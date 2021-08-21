@@ -181,11 +181,12 @@ function _jmt_prompt_reset {
 }
 
 function _jmt_bash_prompt {
+  _JMT_RETVAL=$?
+
   # Only show three levels of dirs by default
   : ${PROMPT_DIRTRIM:=3}
   : ${JMT_FORCETIME:=false}
 
-  _JMT_RETVAL=$?
   _JMT_START_COLUMN=$(_jmt_current_column)
 
   _JMT_PS1=""
